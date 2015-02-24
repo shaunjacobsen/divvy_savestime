@@ -8,9 +8,9 @@
 // Establish variables for call to Google Directions API
 
 $i = 1;						// default value for i, in case it is not established below.
-$deptime = 1426507200; 		// the departure time (in UNIX timestamp, i.e. seconds since 01/01/1970 – this value must be after today's date)
+$deptime = 1426528800; 		// the departure time (in UNIX timestamp, i.e. seconds since 01/01/1970 – this value must be after today's date)
 $mode = "walking";			// mode to get directions in (walking, bicycling, transit, driving)
-$mode_mod = "walk";		// set to the same as $mode but with the following: walk, bike, transit, drive
+$mode_mod = "walk";			// set to the same as $mode but with the following: walk, bike, transit, drive
 
 // Connect to database
 
@@ -20,15 +20,14 @@ $mode_mod = "walk";		// set to the same as $mode but with the following: walk, b
 
 // Start the loop to get all information
 
-//for ($i=200;$i<=100;$i++) {
+for ($i=3000;$i<=3500;$i++) {
 
 	$sql_getid = "SELECT km_" . $mode_mod . ", time_" . $mode_mod . ", id FROM 2014_distances WHERE km_" . $mode_mod . " IS NULL ORDER BY id";
 	$query_id = mysql_query($sql_getid);
     $id_row = mysql_fetch_row($query_id);
     $i = $id_row[2];
 
-
-if ($i>1) {
+//if ($i>1) {
 
 
 // Find the coordinates of the from/to stations based on the id variable $i
@@ -69,7 +68,19 @@ if ($i>1) {
 
 // Google Directions API data
 
-	// Get the duration, in text (e.g. 18 minutes), and saves as $duration_name
+	// Only if the API server is responding will the values update.
+
+	if ($xml->status !== "OK") {
+
+		$duration_name = NULL;
+		$duration_seconds = NULL;
+		$distance_name = NULL;
+		$distance_metres = NULL;
+		echo "<br /><span style=\"color:#FFA500;\">Could not connect to API; record not updated.</span>";
+
+	} else {
+
+		// Get the duration, in text (e.g. 18 minutes), and saves as $duration_name
 
 		$dur_text = $xml->xpath('route/leg/duration/text');
 		foreach($dur_text as $duration_name) {
@@ -97,22 +108,26 @@ if ($i>1) {
 			echo "" . $distance_metres . " m)<br />";
 		}
 
-// Update the database
+	// Update the database
 
-    $sql = "UPDATE `2014_distances` SET km_" . $mode_mod . " = " . $distance_metres. ", time_" . $mode_mod . " = " . $duration_seconds . " WHERE id =" . $i . "";
-    
-    if (mysql_query($sql) === TRUE) {
-    	echo "<span style=\"color:#32CD32;\">Successfully updated.</span><br />";
-    } else {
-    	echo "<span style=\"color:#ff0000;\">Error updating row.</span><br />" . mysql_error() . "";
-    }
+	    $sql = "UPDATE `2014_distances` SET km_" . $mode_mod . " = " . $distance_metres. ", time_" . $mode_mod . " = " . $duration_seconds . " WHERE id =" . $i . "";
+	    
+	    if (mysql_query($sql) === TRUE) {
+	    	echo "<span style=\"color:#32CD32;\">Successfully updated.</span><br />";
+	    } else {
+	    	echo "<span style=\"color:#ff0000;\">Error updating row.</span><br />" . mysql_error() . "";
+	    }
+
+	}
+
+
 
 echo "<br />***<br /><br />";
 
-// usleep(600000);
+usleep(200000);
 
-} else {
-	echo "FATAL ERROR.";
+//} else {
+//	echo "FATAL ERROR.";
 }
 
 mysql_close();
