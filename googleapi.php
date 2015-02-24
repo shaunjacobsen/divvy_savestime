@@ -5,12 +5,12 @@
 
 <?php
 
-// Establish variables for call to Google Directions API
+// Establish global variables and variables for call to Google Directions API
 
 $i = 1;						// default value for i, in case it is not established below.
 $deptime = 1426528800; 		// the departure time (in UNIX timestamp, i.e. seconds since 01/01/1970 – this value must be after today's date)
-$mode = "walking";			// mode to get directions in (walking, bicycling, transit, driving)
-$mode_mod = "walk";			// set to the same as $mode but with the following: walk, bike, transit, drive
+$mode = "transit";			// mode to get directions in (walking, bicycling, transit, driving)
+$mode_mod = "transit";		// set to the same as $mode but with the following: walk, bike, transit, drive
 
 // Connect to database
 
@@ -20,9 +20,9 @@ $mode_mod = "walk";			// set to the same as $mode but with the following: walk, 
 
 // Start the loop to get all information
 
-for ($i=3000;$i<=3500;$i++) {
+for ($i=0;$i<=200;$i++) {
 
-	$sql_getid = "SELECT km_" . $mode_mod . ", time_" . $mode_mod . ", id FROM 2014_distances WHERE km_" . $mode_mod . " IS NULL ORDER BY id";
+	$sql_getid = "SELECT km_" . $mode_mod . ", time_" . $mode_mod . ", id, transit_type, transit_line FROM 2014_distances WHERE km_" . $mode_mod . " IS NULL ORDER BY id";
 	$query_id = mysql_query($sql_getid);
     $id_row = mysql_fetch_row($query_id);
     $i = $id_row[2];
@@ -43,11 +43,79 @@ for ($i=3000;$i<=3500;$i++) {
 
 // Load the data from the API via a URL
 
-	$xml = simplexml_load_file("https://maps.googleapis.com/maps/api/directions/xml?origin=" . $station_from_coord . "&destination=" . $station_to_coord . "&departure_time=" . $deptime . "&mode=" . $mode . "&language=en&key=AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do") or die("Error: cannot create xml object.");
+	$xml = simplexml_load_file("https://maps.googleapis.com/maps/api/directions/xml?origin=" . $station_from_coord . "&destination=" . $station_to_coord . "&departure_time=" . $deptime . "&mode=" . $mode . "&language=en&key=AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8") or die("Error: cannot create xml object.");
 	foreach($xml->xpath('.//leg') as $leg) {
 		$attributes = $leg->attributes();
 		echo $attributes['duration'] . "\n";
 	}
+
+	// If getting transit directions, find the types and line/route of each leg of the journey
+
+	if ($mode == "transit") {
+
+		$transit_vehicle_array = array();
+		$transit_line_array = array();
+		$transit_type_array = array();
+
+		// Get the transit directions (including walking) and add them to an array with the steps listed
+
+		echo "Step method: ";
+
+		foreach($xml->xpath('route/leg/step/travel_mode') as $transit_steps) {
+			array_push($transit_vehicle_array, $transit_steps);
+			echo $transit_steps . ", ";
+		} 
+		foreach($xml->xpath('route/leg/step/transit_details/line/name') as $line_name) {
+			array_push($transit_line_array, $line_name);
+			}
+		foreach($xml->xpath('route/leg/step/transit_details/line/vehicle/type') as $line_type) {
+			array_push($transit_type_array, $line_type);
+			}
+
+		echo "<br />";
+		
+		// Count the number of steps in the transit directions (includes walking)
+
+		$number_steps = count($transit_vehicle_array);
+		echo $number_steps . " steps.";
+
+		// If there is only one step and it is not TRANSIT, set the transit vehicle type to WALK
+
+		if ($number_steps == 1) {
+			if ($transit_vehicle_array[0] !== "TRANSIT") { 	
+			$transit_type = "WALK";
+			}
+		} else {
+		// Remove all non-transit steps (basically only WALKING)
+			for ($v=0;$v<$number_steps;$v++) {
+				if (($vkey = array_search("WALKING", $transit_vehicle_array)) !== false) {
+					unset($transit_vehicle_array[$vkey]);
+			}
+		}
+			$transit_type = "TRANSIT";
+		}
+
+	// Split the arrays
+
+	$insert_vehicles = implode(",",$transit_line_array);
+	echo "<br />Line(s): " . $insert_vehicles;
+
+	$insert_types = implode(",",$transit_type_array);
+	echo "<br />Method(s): " . $insert_types;
+
+	if($transit_type == "WALK") {
+		$insert_types = "WALK";
+	}
+
+	echo "<br /> Overll mode used: " . $transit_type . "<br />";
+
+	} else {
+		// If the entire trip is not transit, it ignores the arrays and ensures existing transit directions are not overwritten.
+		$transit_vehicle_array = NULL;
+		$insert_types = $id_row[3];
+		$insert_vehicles = $id_row[4];
+	}
+
 // Get the status of the API connection by checking for loaded XML nodes
 
 	echo "Status of API connection: ";
@@ -70,7 +138,7 @@ for ($i=3000;$i<=3500;$i++) {
 
 	// Only if the API server is responding will the values update.
 
-	if ($xml->status !== "OK") {
+	if ($xml->status != "OK") {
 
 		$duration_name = NULL;
 		$duration_seconds = NULL;
@@ -110,7 +178,7 @@ for ($i=3000;$i<=3500;$i++) {
 
 	// Update the database
 
-	    $sql = "UPDATE `2014_distances` SET km_" . $mode_mod . " = " . $distance_metres. ", time_" . $mode_mod . " = " . $duration_seconds . " WHERE id =" . $i . "";
+	    $sql = "UPDATE `2014_distances` SET km_" . $mode_mod . " = " . $distance_metres. ", time_" . $mode_mod . " = " . $duration_seconds . ", transit_line = \"" . addslashes($insert_vehicles) . "\", transit_type = \"" . $insert_types . "\" WHERE id =" . $i . "";
 	    
 	    if (mysql_query($sql) === TRUE) {
 	    	echo "<span style=\"color:#32CD32;\">Successfully updated.</span><br />";
@@ -124,7 +192,7 @@ for ($i=3000;$i<=3500;$i++) {
 
 echo "<br />***<br /><br />";
 
-usleep(200000);
+usleep(500000);
 
 //} else {
 //	echo "FATAL ERROR.";
