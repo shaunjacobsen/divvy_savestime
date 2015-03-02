@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.js'></script>
+	<style>
+		html {
+		background-color: #fff;
+		color: #000;
+	}
+		#map { position:absolute; top:0; bottom:0; width:200px; height:100%; }
+	</style>
+</head>
+<body>
+
+<div class="popup">
+
+<table><tr><td>
+
+<table width="250px"><tr><td>
+
+<span class="station">The From Station Name <i class="fa fa-arrow-right"></i> The To Station Name</span>
+<p><span class="distance"><i class="fa fa-tachometer"></i> 1.4 mi <em>(3.7 km)</em></span></p>
+<p>
+	<table width="250px">
+		<tr>
+		<td class="stationstats" style="border-right: #fff 5px solid;">1,374<small> trips</small></td>
+		<td class="stationstats">13,000<small> hrs saved</small> </td>
+		</tr>
+	</table>
+	<hr>
+</p>
+
+</td></tr></table>
+
+<table width="250px" class="directions">
+	<tr class="dircontainer">
+		<td><table><tr>
+			<td><img src="img/SUBWAY.png" /></td>
+			<td><img src="img/bus.png" /></td>
+			</tr><tr>
+			<td><span class="route">Purple Line</span> <span style="text-align: right;"><i class="fa fa-arrow-right"></i></span> </td>
+			<td><span class="route">36</span></td>
+			</tr>
+			</table>
+		</td>
+		<td class="dirtime">10<small> min</small></td>
+	</tr>
+	<tr class="dircontainer">
+		<td class="dirbike"><img src="img/BIKE.png" height="50px" /></td>
+		<td class="dirtime">7<small> min</small></td>
+	</tr>
+	<tr class="savingscontainer">
+		<td class="savings" colspan="2"><small>Divvy is </small>3 min<small> faster</small></td>
+		</tr>
+
+</table>
+
+</td>
+
+<!-- map -->
+
+<td>
+
+<div id="map">map loading</div>
+
+</td></tr>
+
+</table>
+
+</div>
+
+<script> 
+
+	L.mapbox.accessToken = 'pk.eyJ1IjoidHJhbnNpdGl6ZWQiLCJhIjoiM1NqT0RmSSJ9.iyCQqeobeli23U9UJmAHzQ';
+	var map = L.mapbox.map('map', 'transitized.lbjen276')
+	    .setView([41.871962000,-87.626106000], 12);
+
+	var featureLayer = L.mapbox.featureLayer();
+		featureLayer += L.marker([41.871962000,-87.626106000], {
+			icon: L.mapbox.marker.icon({
+				'marker-size': 'large',
+				'marker-symbol': 'bicycle',
+				'marker-color': '#66CD00'
+			})
+		}).addTo(map);
+		featureLayer += L.marker([41.865212000,-87.617759000], {
+			icon: L.mapbox.marker.icon({
+				'marker-size': 'large',
+				'marker-symbol': 'bicycle',
+				'marker-color': '#FF6666'
+			})
+		}).addTo(map);
+
+		map.fitBounds(featureLayer.getBounds());
+
+</script>
+
+</body>
+</html>

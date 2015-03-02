@@ -1,5 +1,11 @@
 <html>
 <head>
+	<style type="text/css">
+		html {
+		font-family: "Helvetica Neue", "Helvetica", sans-serif;
+		font-size: 11px;
+		}
+	</style>
 </head>
 <body>
 
@@ -12,15 +18,20 @@ $deptime = 1426528800; 		// the departure time (in UNIX timestamp, i.e. seconds 
 $mode = "transit";			// mode to get directions in (walking, bicycling, transit, driving)
 $mode_mod = "transit";		// set to the same as $mode but with the following: walk, bike, transit, drive
 
+// Google Developer API key
+
+//$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
+$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
+
 // Connect to database
 
 	mysql_connect("localhost", "root", "root") or die(mysql_error()); mysql_select_db("divvy") or die(mysql_error());
 
-	echo "<strong>Beginning Update...</strong><br /><br />*****<br /><br />";
+	echo "<h1>Calculating Directions</h1><h3>This script gets transit directions between two points (Divvy stations)<br />and updates the 2014_distances database with details of the transit directions.<br />It will run until the specified id, or until the Google Developer API request limit is reached.</h3><br /><br />*****<br /><br />";
 
 // Start the loop to get all information
 
-for ($i=0;$i<=200;$i++) {
+for ($i=0;$i<=15000;$i++) {
 
 	$sql_getid = "SELECT km_" . $mode_mod . ", time_" . $mode_mod . ", id, transit_type, transit_line FROM 2014_distances WHERE km_" . $mode_mod . " IS NULL ORDER BY id";
 	$query_id = mysql_query($sql_getid);
@@ -43,7 +54,7 @@ for ($i=0;$i<=200;$i++) {
 
 // Load the data from the API via a URL
 
-	$xml = simplexml_load_file("https://maps.googleapis.com/maps/api/directions/xml?origin=" . $station_from_coord . "&destination=" . $station_to_coord . "&departure_time=" . $deptime . "&mode=" . $mode . "&language=en&key=AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8") or die("Error: cannot create xml object.");
+	$xml = simplexml_load_file("https://maps.googleapis.com/maps/api/directions/xml?origin=" . $station_from_coord . "&destination=" . $station_to_coord . "&departure_time=" . $deptime . "&mode=" . $mode . "&language=en&key= " . $apiKey . "") or die("Error: cannot create xml object.");
 	foreach($xml->xpath('.//leg') as $leg) {
 		$attributes = $leg->attributes();
 		echo $attributes['duration'] . "\n";
@@ -145,6 +156,8 @@ for ($i=0;$i<=200;$i++) {
 		$distance_name = NULL;
 		$distance_metres = NULL;
 		echo "<br /><span style=\"color:#FFA500;\">Could not connect to API; record not updated.</span>";
+
+		exit(); // exits the script
 
 	} else {
 

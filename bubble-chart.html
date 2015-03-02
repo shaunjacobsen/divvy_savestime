@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bubble chart</title>
+	<script src="http://d3js.org/d3.v2.min.js" charset="utf-8"></script>
+	<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+	<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+	<script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<!-- <script type="text/javascript" src="js/dc.js"></script> -->
+</head>
+<body>
+
+<div class="wrapper">
+
+<div class="fixed">
+    <div class="span5">
+      <div class="large_info">
+        <div>
+          <div class="biginfo">
+          <span id="total_savings" class="highlight">Loading</span> saved and
+          <span id="total_trips" class="highlight">Loading</span> trips at <select id="station_menu" onchange="plot()"></select><br />
+
+          <br />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="plot">
+  </div>
+</div>
+
+<div class="flex">
+		<h1>Who's Faster? </h1><h2>A look at how Divvy riders perform compared to public transport <br /><em>by <a href="http://www.sjacobsen.com/" target="_blank">Shaun Jacobsen</a> of <a href="http://www.transitized.com/" target="_blank">Transitized</a></em></h2>
+		<div class="description">
+			<p>Divvy bike-sharing is a complement to Chicago's existing transport system as well as a new transportation network. How are people using it as such?</p>
+			<p>This project takes the median travel time of Divvy trips taken in 2014 between every possible station pair and compares it to the same trip by public transportation. <em>In most cases, Divvy trips are faster than public transportation, suggesting that its riders could be saving time by riding bikes instead of trains, buses, or walking.</em></p>
+			<p>Roll over a circle to see travel time/distance, the number of trips, and a map of the station pair. Select a station from the list to see only trips to and from that station.</p>
+			<p><strong>Data Collection &amp; Assumptions</strong></p>
+			<div class="fineprint"><p>Transit trip duration and steps were calculated using <a href="https://developers.google.com/maps/documentation/directions/" target="_blank">Google Directions API</a> between the latitude/longitude of station pairs. Transit directions are calculated for noon on a Monday. Walking directions are provided if Google could not find a faster trip by public transport.</p>
+			<p>Bicycle trip duration and distance is calculated as the median trip duration of all trips between the two listed stations. Trips by Divvy are generally longer than non-Divvy trips, as calculated by the Google Directions API.</p>
+			<p>Median travel times are more favourable than averages due to large disparities in trip duration between annual Divvy members and 24-hour passholders, who are assumed to be more recreational (tourist) users who ride more slowly. Calculating the median prevents outliers (people taking very long trips) from skewing the data.</p>
+			<p>Divvy trip data provided by <a href="http://www.divvybikes.com/" target="_blank">Divvy</a>.</p>
+			<p>Inspiration from .</p>
+			<p>Originally submitted for the 2nd Annual Divvy Data Challenge. <a href="https://github.com/shaunjacobsen/divvy_savestime" target="_blank" style="color: #5fcad3;">Fork on GitHub.</a></p>
+			</div>
+		</div>
+</div>
+
+</div>
+
+<script type="text/javascript">
+
+var stations, trips, x, y, r;
+
+var margin = 75;
+var width = 900;
+var height = 550;
+  var svg = d3.select("div#plot").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+  
+  var popup = d3.select("div#plot").append("div")
+    .attr("class", "popup")
+    .style("opacity", 0.0);
+  
+  function format_time(t) {
+    if (t==0) return "-";
+    var h = Math.floor(t / (60 * 60));
+    var out = "";
+    if (h > 0) {
+      return "<span style=\"font-size: 24px; font-weight: bold;\">" + h + "</span> hrs "; 
+    } else {
+      var m = Math.floor(t / 60);
+      return "<span style=\"font-size: 24px; font-weight: bold;\">" + m + "</span> mins";
+    }  
+  }
+
+  function format_total_savings(t) {
+    if (t==0) return "-";
+    var h = Math.floor(t / (60 * 60));
+    var out = "";
+    if (h > 0) {
+      return comma(h) + " hours"; 
+    } else {
+      var m = Math.floor(t / 60);
+      return m + " minutes";
+    }  
+  }
+
+  var twodigit = d3.format(".2f");
+  var comma = d3.format(",");
+
+  function generate_popup(d){
+  	var get_from_station = $.grep(stations, function(e){ return e.id == d.stn_f; });
+  	var get_to_station = $.grep(stations, function(e){ return e.id == d.stn_t; });
+  	var round_distance = d3.round(d.km_bike * 0.000621371,1);
+  	var km_distance = d3.round(d.km_bike * 0.001,1);
+
+  	// gets the keys/values from the from station id
+
+  	for (key in get_from_station) {
+  		if(get_from_station.hasOwnProperty(key)) {
+  			var get_from_station_val = get_from_station[key];
+  		}
+  	}
+
+  	// gets the keys/values from the to station id
+
+  	for (key in get_to_station) {
+  		if(get_to_station.hasOwnProperty(key)) {
+  			var get_to_station_val = get_to_station[key];
+  		}
+  	}
+
+  	var from_station_name = get_from_station_val["name"];
+  	var to_station_name = get_to_station_val["name"];
+  	var transit_steps = d.transit_type.split(",");
+  	var transit_lines = d.transit_line.split(",");
+  	var pair_id = d.id;
+  	var calc_savings = (Math.round(d.time_transit/60)-Math.round(d.time_bike/60));
+  	function is_savings(a) {
+  		if (calc_savings >= 0) {
+  			return "faster";
+  		} else {
+  			return "slower";
+  		}
+  	};
+  	function is_savings_colour(b) {
+  		if (calc_savings >= 0) {
+  			return "#8FBE00";
+  		} else {
+  			return "#E60000";
+  		}
+  	};
+  	function reformat_total_time_saved(e) {
+  		if (calc_savings == 0) {
+  			return "0 min";
+  		} else {
+  			return format_time(d.total_savings);
+  		}
+  	};
+
+    var output = "<span class=\"station\">" + from_station_name + "<br /><i class=\"fa fa-arrow-down\"></i><br />" + to_station_name + "</span><p><span class=\"distance\"><i class=\"fa fa-tachometer\"></i> " + round_distance + " mi <em>(" + km_distance + " km)</em></span></p><p><table width=\"300px\"><tr><td class=\"stationstats\" style=\"border-right: #fff 5px solid;\">" + comma(d.count) + "<small> trips</small></td><td class=\"stationstats\">" + reformat_total_time_saved() + "<small> saved</small></td></tr></table></p><hr /><table width=\"300px\" class=\"directions\"><tr class=\"dircontainer\"><td class=\"dirbike\"><img src=\"img/bike.png\" height=\"50px\" /></td><td class=\"dirtime\">" + Math.round(d.time_bike/60) + "<small> min</small></td></tr><tr class=\"dircontainer\"><td><table align=\"center\"><tr>";
+				for (var i=0; i<transit_steps.length; i++) {
+					output += "<td style=\"text-align:center\"><img src=\"img/" + transit_steps[i] + ".png\" height=\"50px\"/></td>";
+				}
+		output += "<tr>";
+			if ((transit_lines.length == 1) && (transit_lines == "WALK")) {
+				return "walk";
+			} else {
+				for (var i=0; i<transit_lines.length; i++) {
+					var getRouteID = $.grep(transitroutes, function(e){ return e.name == transit_lines[i].toUpperCase();
+					});
+					for (route in getRouteID) {
+  						if(getRouteID.hasOwnProperty(route)) {
+  						var busRoute = getRouteID[route];
+  						}
+  					}
+  					var busRouteID = busRoute["route"];
+  					var routeColour = busRoute["color"];
+					output += "<td class=\"route\" style=\"background-color:#" + routeColour + ";\">" + busRouteID + "</td>";
+				}
+			}
+		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr><table><hr />Debugging tools<br />Distances ID: " + pair_id + "";
+    
+    return output;
+}
+
+  function mouseover(d,i) {
+    popup.style("opacity", 1.0)
+      .html(generate_popup(d));
+    svg.select("circle#current")
+      .attr("cx", x(d.savings_transit))
+      .attr("cy", y(d.count))
+      .attr("r", r(d.total_savings))
+      .attr("pair", d.id)
+      .style("opacity", 1.0);
+  }
+
+  function mouseout(d,i){
+    svg.select("circle#current").style("opacity", 0.0)
+    popup.style("opacity", 0.0);
+  }
+
+function get_tickValues(max) {
+    if(max > 3200) return [10, 25, 50, 100, 200, 400, 800, 1600, 3200, 6400];
+    else if(max > 2000) return [10, 25, 50, 100, 200, 400, 800, 1600, 3200];
+    else if(max > 1200) return [10, 25, 50, 100, 200, 400, 800, 1600];
+    else if(max > 700) return [10, 25, 50, 100, 200, 400, 800];
+    else if(max > 300) return [10, 25, 50, 100, 200, 400];
+    else if(max > 150) return [10, 15, 25, 50, 100, 200];
+    else if(max > 80) return [10, 15, 25, 50, 100];
+    else if(max > 40) return [10, 15, 25, 50];
+    else if(max > 20) return [10, 15, 25];
+    else return [10, 15, 20];
+  }
+
+d3.json("data.json", function(data) {
+
+	var numberFormat = d3.format(".2f");
+	var comma = d3.format(",");
+
+	stations = data.stations;
+	trips = data.trips;
+	trips = data.trips.filter(function(t) {
+		return (t.stn_f !== t.stn_t) && (t.savings_transit >= -600);
+	});
+	transitroutes = data.transitroutes;
+
+	// converts seconds to minutes
+
+	trips.forEach(function(t) { 
+		t.savings_transit = t.savings_transit / 60;
+		t.total_savings = t.total_savings;
+	});
+
+	d3.select("#station_menu")
+		.append("option")
+		.attr("value", -1)
+		.text("All Stations");
+	for(var i in stations) {
+		d3.select("#station_menu")
+			.append("option")
+			.attr("value", stations[i].id)
+			.text("" + stations[i].id + " " + stations[i].name);
+	}
+
+	all_total_trips = d3.sum(trips, function(t) { return t.count; });
+	all_total_savings = d3.sum(trips, function(t) { return t.total_savings; });
+
+	init();
+
+});
+
+function init() {
+
+	x = d3.scale.linear()
+    	.domain(d3.extent(trips, function(t) { return t.savings_transit; }))
+    	.range([margin, width - margin]).nice();
+
+	var x_axis = d3.svg.axis().scale(x)
+    	.tickPadding(10)
+    	.tickSize(6,3,0)
+    	.orient("bottom");
+
+    svg.append("g")
+    	.attr("class", "x axis")
+    	.attr("transform", "translate(0," + (height - 30) + ")")
+    	.style("fill", "#fff")
+    	.style("font-size","14px")
+    	.call(x_axis); 
+    
+    svg.append("g")
+		.attr("class", "y axis")
+    	.attr("transform", "translate(" + (margin - 20) + ", 0)")
+    	.style("font-size","14px")
+    	.style("fill", "#fff"); 
+    
+    svg.append("line")
+    	.attr("x1", x(0))
+    	.attr("x2", x(0))
+    	.attr("y1", 60)
+    	.attr("y1", height - 80)
+    	.style("stroke", "#fff")
+    	.style("stroke-opacity", 0.25)
+    	.style("stroke-width", "1px");
+
+    svg.append("circle")
+    	.attr("id", "current")
+    	.style("fill", "none")
+    	.style("stroke-width", "3px")
+    	.style("stroke", "#fff")
+    	.style("opacity", 0.0);
+
+    svg.append("text")
+		.attr("x", width - margin)
+		.attr("y", height - 40)
+		.style("font-weight", "700")
+		.style("font-size", "14px")
+		.style("fill", "#8dd9e0")
+		.style("text-anchor", "end")
+		.text("Travel Time Savings (min)");
+    
+    svg.append("text")
+		.attr("x", margin - 20)
+		.attr("y", 12)
+		.style("font-weight", "700")
+		.style("font-size", "14px")
+		.style("fill", "#8dd9e0")
+		.style("text-anchor", "end")
+		.text("# Trips");
+
+    plot_id(-1);
+
+}
+
+function plot() {
+	var e = document.getElementById("station_menu");
+    plot_id(e.options[e.selectedIndex].value);
+    console.log(e.options[e.selectedIndex].value);
+}
+
+function plot_id(station_id) {
+	if(station_id < 0) {
+		d3.select("#total_trips").html(comma(all_total_trips));
+		d3.select("#total_savings").html(format_total_savings(all_total_savings));
+	} else {
+		d3.select("#total_trips").html(comma(d3.sum(trips, function(t) {
+			if (station_id >= 0) {
+				if ((t.stn_f == station_id) || (t.stn_t == station_id))
+					return t.count;
+				else
+					return 0;
+			} else {
+				return t.count;
+			}
+		})));
+		d3.select("#total_savings").html(format_total_savings(d3.sum(trips, function(t) {
+			if (station_id >= 0) {
+				if ((t.stn_f == station_id) || (t.stn_t == station_id))
+					return t.total_savings;
+				else
+					return 0;
+			} else {
+				return t.total_savings;
+			}
+		})));
+	}
+
+	var selected_trips;
+	if (station_id >= 0) {
+		selected_trips = trips.filter(function(t) {
+			return ((t.stn_f == station_id) || (t.stn_t == station_id));
+		});
+	} else {
+		selected_trips = trips;
+	}
+
+	var data_model = svg.selectAll(".element")
+		.data(selected_trips, function(d) { return d.stn_f + "-" + d.stn_t; });
+
+	var old_y = y;
+
+	y = d3.scale.pow().exponent(.1)
+		.domain([9,d3.max(selected_trips, function(t){ return t.count; })])
+		.range([height - 40, 60]);
+
+	r = d3.scale.linear()
+		.domain(d3.extent(selected_trips, function(t) { return t.total_savings; }))
+    	.range([2, 50]);
+
+    var y_axis = d3.svg.axis().scale(y)
+    	.tickPadding(10)
+    	.tickSize(6,3,0)
+    	.tickValues(get_tickValues(y.domain()[1]))
+    	.orient("left");
+
+    var t = svg.transition().duration(750).delay(500);
+
+    t.select(".y.axis").call(y_axis);
+
+    data_model.enter()
+    	.append("g")
+    	.attr("class", "element")
+    	.attr("transform", function(d,i) {
+    		return "translate(" + x(d.savings_transit) + ",-50)";
+    	})
+    	.each(enter);
+
+    function enter(p) {
+    	var element = d3.select(this);
+    	element.append("circle")
+        .attr("class", "dot")
+        .attr("r", function(d,i) {
+          return r(d.total_savings);
+        })
+        .attr("fill","#6ecfd8")
+        .style("stroke-width", "3px")
+        .style("stroke", "#999999")
+        .style("stroke-opacity", "0.0")
+        .style("fill-opacity", "0.2");
+    }
+
+    data_model.each(update);
+
+    function update(e,j) {
+    	var element = d3.select(this);
+    	var countAdj = 0;
+    	element.transition()
+    		.duration(1000)
+    		.delay(500)
+    		.attr("transform", function(d,i) {
+        		return "translate(" + x(d.savings_transit) + "," + y(d.count) + ")";
+        	});
+        element.select(".dot")
+        	.transition()
+        	.delay(0)
+        	.duration(2000)
+        	.ease("bounce")
+        	.attr("r", r(e.total_savings))
+        	.attr("pair_id", e.id);
+    }
+
+
+    var positions = selected_trips.map(function(t) {
+    	var genRan = Math.floor((Math.random() * 1000) + 1);
+    	var combCount = + t.count + "." + genRan;
+    	var numCombCount = Number(combCount);
+    	return [x(t.savings_transit),y(numCombCount)];
+    });
+
+    svg.selectAll("clipPath").remove();
+    svg.selectAll("path").remove();
+
+    svg.selectAll("path")
+    	.data(d3.geom.voronoi(positions).map(function(polygon, i) {
+    		var p = positions[i];
+    		var bounds = d3.geom.polygon(
+    			[
+    			[p[0]-50, p[1]-50],
+    			[p[0]-50, p[1]+50],
+    			[p[0]+50, p[1]+50],
+    			[p[0]+50, p[1]-50]
+    			]);
+    		return bounds.clip(polygon);
+    	}))
+    	.enter().append("svg:path")
+    		.attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+    		.style("stroke", "#fff")
+    		.style("opacity", .0);
+
+    	svg.selectAll("path")
+        	.style("cursor","hand")
+        	.on("mouseover", function(d,i){
+          		mouseover(selected_trips[i],i);
+        	})
+        	.on("mouseout", function(d,i){
+          		mouseout(selected_trips[i],i);
+        	})
+        	.on("mousemove", function(d,i){
+          		if (d3.event.pageX < d3.select("div#plot").node().offsetLeft + width * 2 / 3) {
+            		popup.style("left", d3.event.pageX + 45);
+          		} else {
+            		popup.style("left", d3.event.pageX - 400);
+          		}
+          			popup.style("top", d3.event.pageY - 300);
+        	});
+
+        data_model.exit()
+        	.transition()
+        	.duration(1000)
+        	.delay(0)
+        	.attr("transform", function(d,i) {
+        		return "translate(" + x(d.savings_transit) + "," + (height + 50) + ")";
+        	})
+        	.remove();
+}
+
+</script>
+
+</body>
+</html>

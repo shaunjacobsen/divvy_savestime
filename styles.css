@@ -1,0 +1,268 @@
+/* @import url(http://fonts.googleapis.com/css?family=Roboto:400,500,700,300); */
+@import url(http://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic);
+
+html {
+	background-color: #556270;
+	font-family: 'Lato', sans-serif;
+}
+
+h1 {
+	color: #AEE239;
+	font-size: 64px;
+	font-weight: 700;
+	margin-bottom: -20px;
+}
+
+h2 {
+	color: #8dd9e0;
+	font-size: 18px;
+	font-weight: 400;
+	margin-left: 10px;
+}
+
+h2 > em {
+	color: #FFC966;
+	font-weight: 300;
+	font-size: 14px;
+}
+
+h2 > em > a {
+	color: #FFC966;
+	border-bottom: 1px dotted #FFC966;
+	text-decoration: none;
+}
+
+p {
+	color: #dee2e6;
+	font-size: 13px;
+	font-weight: 300;
+}
+
+p>a {
+	color: #5fcad3;
+	text-decoration: none;
+}
+
+p>a:hover {
+	text-decoration: underline;
+}
+
+p>em {
+	color: #AEE239;
+	font-style: normal;
+}
+
+.fineprint p {
+	font-size: 11px;
+}
+
+.description {
+	margin-left: 10px;
+}
+
+.wrapper {
+	width: 98%;
+	height: 750px;
+	margin: 5px;
+}
+
+.fixed {
+	width: 70%;
+	float: left;
+}
+
+.flex {
+	float: left;
+	width: 30%;
+	margin-top: -33px;
+}
+
+.axis line {
+	stroke: #fff;
+	stroke-width: 1px;
+}
+.axis path {
+	stroke: none;
+	color: #fff;
+}
+
+.axis .tick {
+	color: #fff;
+}
+
+.axis  {
+	color: #fff;
+}
+
+.biginfo {
+	color: #fff;
+	font-size: 32px;
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+.biginfo .highlight {
+	padding: 5px;
+	padding-right: 10px;
+	padding-left: 10px;
+	margin-left: 5px;
+	background-color: #40C0CB;
+}
+
+div.popup {
+	position: relative;
+	border: 1px solid #bbbbbb;
+	color: #333;
+	background-color: #fff;
+	padding: 10px;
+  	width: 450px;
+  	max-width: 450px;
+  	font-size: 12px;
+  	pointer-events: none;
+}
+
+div.popup .station {
+	color: #333;
+	font-weight: 700;
+	font-size: 16px;
+}
+
+div.popup .distance {
+	color: #555;
+	font-weight: 400;
+	font-size: 16px;
+}
+
+div.popup .distance em {
+	font-weight: 300;
+	font-style: normal;
+}
+
+div.popup .transit {
+	height: 25px;
+	width: 25px;
+}
+
+div.popup table {
+  	font-size: 12px;
+}
+
+div.popup img {
+	padding-bottom: 5px;
+	padding-top: 5px;
+}
+
+div.popup .dircontainer {
+	min-height: 75px;
+	height: 75px;
+}
+
+div.popup .savingscontainer {
+	height: 50px;
+}
+
+div.popup .stationstats {
+	padding-right: 10px;
+	padding-left: 3px;
+	min-height: 35px;
+	height: 35px;
+	background-color: #40C0CB;
+	color: #fff;
+	font-size: 22px;
+	font-weight: 700;
+}
+
+.stationstats small {
+	font-size: 12px;
+	font-weight: 300;
+}
+
+div.popup .dirtime {
+	padding: 5px;
+	border: 3px solid #fff;
+	background-color: #f1f1f1;
+	min-width: 60px;
+	height: 75px;
+	width: 60px;
+	text-align: center;
+	color: #333;
+	font-size: 40px;
+}
+
+div.popup .dirbike {
+	padding: 5px;
+	border: 3px solid #fff;
+	background-color: #fff;
+	min-width: 75px;
+	width: 100px;
+	text-align: center;
+	color: #333;
+	font-size: 48px;
+}
+
+div.popup .savings {
+	padding: 5px;
+	border: 3px solid #fff;
+	min-width: 75px;
+	width: 100px;
+	text-align: center;
+	color: #fff;
+	font-size: 36px;
+}
+
+div.popup .savings small {
+	font-size: 26px;
+	font-weight: 300;
+}
+
+.dirbike img {
+	margin-top: 10px;
+}
+
+div.popup .dirtime small {
+	font-size: 14px;
+	font-weight: 300;
+}
+
+div.popup .route {
+	margin-top: 10px;
+	padding: 1px;
+	padding-right: 5px;
+	padding-left: 5px;
+	background-color: #BABABA;
+	color: #fff;
+	text-align: center;
+}
+
+div.popup hr {
+  	margin: 5px 0px;
+  	border: none;
+  	height: 1px;
+  	color: #cccccc;
+  	background-color: #cccccc;
+}
+
+select {
+	margin: 10px 0px 10px 5px;
+	top: 23px;
+	position: absolute;
+	border: 1px solid #111;
+	background: transparent;
+	width: 300px;
+	padding: 5px 35px 5px 5px;
+	font-size: 14px;
+	height: 50px;
+	font-family: 'Lato', sans-serif;
+  	-webkit-appearance: none;
+  	-moz-appearance: none;
+  	appearance: none;
+  	background: url(img/BIKE.png) 96% / 15% no-repeat #fff;
+}
+/*target Internet Explorer 9 and Internet Explorer 10:*/
+
+@media screen and (min-width: 0\0) {
+  select {
+    background: none;
+    padding: 5px;
+  }
+}
