@@ -16,13 +16,13 @@
 
 mysql_connect("localhost", "root", "root") or die(mysql_error()); mysql_select_db("divvy") or die(mysql_error());
 
-$query = "SELECT id, transit_line FROM 2014_distances WHERE id < 10000";
+$query = "SELECT id, transit_line FROM 2014_distances WHERE id > 19738";
 $query_e = mysql_query($query);
 $query_r = mysql_fetch_row($query_e);
 $query_nr = mysql_num_rows($query_e);
 $get_id = $query_r[0];
 
-for ($i=0;$i<$query_nr;$i++) {
+for ($i=19738;$i<$query_nr;$i++) {
 	$line_q = "SELECT id, transit_line FROM 2014_distances WHERE id = " . $i . "";
 	$line_e = mysql_query($line_q);
 	$line_r = mysql_fetch_row($line_e);

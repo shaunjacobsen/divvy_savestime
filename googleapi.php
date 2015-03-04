@@ -20,8 +20,8 @@ $mode_mod = "transit";		// set to the same as $mode but with the following: walk
 
 // Google Developer API key
 
-//$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
-$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
+$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
+//$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
 
 // Connect to database
 
@@ -31,7 +31,7 @@ $apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
 
 // Start the loop to get all information
 
-for ($i=0;$i<=15000;$i++) {
+for ($i=0;$i<=30000;$i++) {
 
 	$sql_getid = "SELECT km_" . $mode_mod . ", time_" . $mode_mod . ", id, transit_type, transit_line FROM 2014_distances WHERE km_" . $mode_mod . " IS NULL ORDER BY id";
 	$query_id = mysql_query($sql_getid);

@@ -162,9 +162,12 @@ var height = 550;
   					}
   					var busRouteID = busRoute["route"];
   					var routeColour = busRoute["color"];
+  				}
+				for (var i=0; i<transit_lines.length; i++) {
 					output += "<td class=\"route\" style=\"background-color:#" + routeColour + ";\">" + busRouteID + "</td>";
 				}
 			}
+			console.log(transit_lines[1]);
 		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr><table><hr />Debugging tools<br />Distances ID: " + pair_id + "";
     
     return output;
@@ -294,7 +297,7 @@ function init() {
 		.style("text-anchor", "end")
 		.text("# Trips");
 
-    plot_id(-1);
+    plot_id(227);
 
 }
 
@@ -431,7 +434,7 @@ function plot_id(station_id) {
     	.enter().append("svg:path")
     		.attr("d", function(d) { return "M" + d.join("L") + "Z"; })
     		.style("stroke", "#fff")
-    		.style("opacity", .0);
+    		.style("opacity", .25);
 
     	svg.selectAll("path")
         	.style("cursor","hand")
