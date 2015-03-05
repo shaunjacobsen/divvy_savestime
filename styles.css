@@ -111,7 +111,6 @@ p>em {
 
 div.popup {
 	position: absolute;
-	border: 1px solid #ccc;
 	color: #333;
 	background-color: #fff;
 	padding: 10px;
@@ -148,7 +147,7 @@ div.popup table {
   	font-size: 12px;
 }
 
-div.popup img {
+div.popup_content img {
 	padding-bottom: 5px;
 	padding-top: 5px;
 }
