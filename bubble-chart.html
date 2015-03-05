@@ -44,10 +44,11 @@
 			<p>Bicycle trip duration and distance is calculated as the median trip duration of all trips between the two listed stations. Trips by Divvy are generally longer than non-Divvy trips, as calculated by the Google Directions API.</p>
 			<p>Median travel times are more favourable than averages due to large disparities in trip duration between annual Divvy members and 24-hour passholders, who are assumed to be more recreational (tourist) users who ride more slowly. Calculating the median prevents outliers (people taking very long trips) from skewing the data.</p>
 			<p>Divvy trip data provided by <a href="http://www.divvybikes.com/" target="_blank">Divvy</a>.</p>
-			<p>Inspiration from .</p>
+			<p>Inspiration from Hubway.</p>
 			<p>Originally submitted for the 2nd Annual Divvy Data Challenge. <a href="https://github.com/shaunjacobsen/divvy_savestime" target="_blank" style="color: #5fcad3;">Fork on GitHub.</a></p>
 			</div>
 		</div>
+		<div id="map2">map</div>
 </div>
 
 </div>
@@ -65,7 +66,14 @@ var height = 550;
   
   var popup = d3.select("div#plot").append("div")
     .attr("class", "popup")
-    .style("opacity", 0.0);
+    .style("opacity", 0.7);
+
+  var maparea = d3.select("div.popup").append("div")
+    .attr("id", "map")
+    .style("opacity", 1);
+
+  var popup_content = d3.select("div.popup").append("div")
+    .attr("class", "popup_content");
   
   function format_time(t) {
     if (t==0) return "-";
@@ -80,7 +88,7 @@ var height = 550;
   }
 
   function format_total_savings(t) {
-    if (t==0) return "-";
+    if (t <= 0) return "-";
     var h = Math.floor(t / (60 * 60));
     var out = "";
     if (h > 0) {
@@ -93,6 +101,16 @@ var height = 550;
 
   var twodigit = d3.format(".2f");
   var comma = d3.format(",");
+
+  //$('<div id="map">').insertAfter(".popup");
+
+  // Generate the map
+
+  L.mapbox.accessToken = 'pk.eyJ1IjoidHJhbnNpdGl6ZWQiLCJhIjoiM1NqT0RmSSJ9.iyCQqeobeli23U9UJmAHzQ';
+  var map = L.mapbox.map('map', 'transitized.lbjen276')
+      .setView([41.871962000,-87.626106000], 11);
+
+  var featureLayer = L.mapbox.featureLayer().addTo(map);
 
   function generate_popup(d){
   	var get_from_station = $.grep(stations, function(e){ return e.id == d.stn_f; });
@@ -120,6 +138,15 @@ var height = 550;
   	var to_station_name = get_to_station_val["name"];
   	var transit_steps = d.transit_type.split(",");
   	var transit_lines = d.transit_line.split(",");
+  	function routeID(h) {
+  		if (d.transit_type == "BUS") {
+  			return d.transit_line_short;
+  		} else {
+  			var split_routes = d.transit_line_short.split(",");
+  			return split_routes[i];
+  		}
+  	}
+  	var colour = d.colour.split(",");
   	var pair_id = d.id;
   	var calc_savings = (Math.round(d.time_transit/60)-Math.round(d.time_bike/60));
   	function is_savings(a) {
@@ -137,57 +164,74 @@ var height = 550;
   		}
   	};
   	function reformat_total_time_saved(e) {
-  		if (calc_savings == 0) {
+  		if (calc_savings <= 0) {
   			return "0 min";
   		} else {
   			return format_time(d.total_savings);
   		}
   	};
 
-    var output = "<span class=\"station\">" + from_station_name + "<br /><i class=\"fa fa-arrow-down\"></i><br />" + to_station_name + "</span><p><span class=\"distance\"><i class=\"fa fa-tachometer\"></i> " + round_distance + " mi <em>(" + km_distance + " km)</em></span></p><p><table width=\"300px\"><tr><td class=\"stationstats\" style=\"border-right: #fff 5px solid;\">" + comma(d.count) + "<small> trips</small></td><td class=\"stationstats\">" + reformat_total_time_saved() + "<small> saved</small></td></tr></table></p><hr /><table width=\"300px\" class=\"directions\"><tr class=\"dircontainer\"><td class=\"dirbike\"><img src=\"img/bike.png\" height=\"50px\" /></td><td class=\"dirtime\">" + Math.round(d.time_bike/60) + "<small> min</small></td></tr><tr class=\"dircontainer\"><td><table align=\"center\"><tr>";
+    var output = "<div id=\"popup-container\"><span class=\"station\">" + from_station_name + "<br /><i class=\"fa fa-arrow-down\"></i><br />" + to_station_name + "</span><p><span class=\"distance\"><i class=\"fa fa-tachometer\"></i> " + round_distance + " mi <em>(" + km_distance + " km)</em></span></p><p><table width=\"250px\"><tr><td class=\"stationstats\" style=\"border-right: #fff 5px solid;\">" + comma(d.count) + "<small> trips</small></td><td class=\"stationstats\">" + reformat_total_time_saved() + "<small> saved</small></td></tr></table></p><hr />";
+    
+    output += "<table width=\"250px\" class=\"directions\"><tr class=\"dircontainer\"><td class=\"dirbike\"><img src=\"img/bike.png\" height=\"50px\" /></td><td class=\"dirtime\">" + Math.round(d.time_bike/60) + "<small> min</small></td></tr><tr class=\"dircontainer\"><td><table align=\"center\"><tr>";
 				for (var i=0; i<transit_steps.length; i++) {
 					output += "<td style=\"text-align:center\"><img src=\"img/" + transit_steps[i] + ".png\" height=\"50px\"/></td>";
 				}
 		output += "<tr>";
-			if ((transit_lines.length == 1) && (transit_lines == "WALK")) {
-				return "walk";
+			if (transit_lines == "WALK") {
+				output += "<td class=\"route\">Walk</td>";
 			} else {
 				for (var i=0; i<transit_lines.length; i++) {
-					var getRouteID = $.grep(transitroutes, function(e){ return e.name == transit_lines[i].toUpperCase();
-					});
-					for (route in getRouteID) {
-  						if(getRouteID.hasOwnProperty(route)) {
-  						var busRoute = getRouteID[route];
-  						}
-  					}
-  					var busRouteID = busRoute["route"];
-  					var routeColour = busRoute["color"];
-  				}
-				for (var i=0; i<transit_lines.length; i++) {
-					output += "<td class=\"route\" style=\"background-color:#" + routeColour + ";\">" + busRouteID + "</td>";
+					output += "<td class=\"route\" style=\"background-color:#" + colour[i] + ";\">" + routeID() + "</td>";
 				}
 			}
-			console.log(transit_lines[1]);
-		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr><table><hr />Debugging tools<br />Distances ID: " + pair_id + "";
+		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr></table>";
+		
+		output += "<hr />Debugging tools<br />Distances ID: " + pair_id + "</div>";
     
     return output;
+    
 }
 
-  function mouseover(d,i) {
-    popup.style("opacity", 1.0)
-      .html(generate_popup(d));
+function updateMarkers(d) {
+  featureLayer.clearLayers(); // Clears existing markers from the map
+
+  // Add the start and end station pair markers to the map
+
+	L.marker(d.stn_f_c.split(","), {
+		icon: L.mapbox.marker.icon({
+			'marker-size': 'large',
+			'marker-symbol': 'bicycle',
+			'marker-color': '#66CD00'
+		})
+	}).addTo(featureLayer);
+
+  L.marker(d.stn_t_c.split(","), {
+    icon: L.mapbox.marker.icon({
+      'marker-size': 'large',
+      'marker-symbol': 'bicycle',
+      'marker-color': '#FF6666'
+    })
+  }).addTo(featureLayer);
+}
+
+function mouseover(d,i) {
+  updateMarkers(d);
+    popup.style("opacity", 1);
+    popup_content.html(generate_popup(d));
     svg.select("circle#current")
       .attr("cx", x(d.savings_transit))
       .attr("cy", y(d.count))
       .attr("r", r(d.total_savings))
       .attr("pair", d.id)
-      .style("opacity", 1.0);
-  }
+      .style("opacity", 1);
+    maparea.style("opacity", 1);
+}
 
-  function mouseout(d,i){
+function mouseout(d,i){
     svg.select("circle#current").style("opacity", 0.0)
     popup.style("opacity", 0.0);
-  }
+}
 
 function get_tickValues(max) {
     if(max > 3200) return [10, 25, 50, 100, 200, 400, 800, 1600, 3200, 6400];
@@ -200,7 +244,7 @@ function get_tickValues(max) {
     else if(max > 40) return [10, 15, 25, 50];
     else if(max > 20) return [10, 15, 25];
     else return [10, 15, 20];
-  }
+}
 
 d3.json("data.json", function(data) {
 
@@ -229,7 +273,7 @@ d3.json("data.json", function(data) {
 		d3.select("#station_menu")
 			.append("option")
 			.attr("value", stations[i].id)
-			.text("" + stations[i].id + " " + stations[i].name);
+			.text("" + stations[i].id + ". " + stations[i].name);
 	}
 
 	all_total_trips = d3.sum(trips, function(t) { return t.count; });
@@ -297,7 +341,7 @@ function init() {
 		.style("text-anchor", "end")
 		.text("# Trips");
 
-    plot_id(227);
+    plot_id(76);
 
 }
 
@@ -395,7 +439,10 @@ function plot_id(station_id) {
     	var countAdj = 0;
     	element.transition()
     		.duration(1000)
-    		.delay(500)
+    		.delay(function(d,i) { 
+          		return (height - margin - y(d.count)) * 5; 
+        	})
+        	.ease("quad-in-out")
     		.attr("transform", function(d,i) {
         		return "translate(" + x(d.savings_transit) + "," + y(d.count) + ")";
         	});
@@ -423,18 +470,16 @@ function plot_id(station_id) {
     	.data(d3.geom.voronoi(positions).map(function(polygon, i) {
     		var p = positions[i];
     		var bounds = d3.geom.polygon(
-    			[
-    			[p[0]-50, p[1]-50],
+    			[[p[0]-50, p[1]-50],
     			[p[0]-50, p[1]+50],
     			[p[0]+50, p[1]+50],
-    			[p[0]+50, p[1]-50]
-    			]);
+    			[p[0]+50, p[1]-50]]);
     		return bounds.clip(polygon);
     	}))
     	.enter().append("svg:path")
     		.attr("d", function(d) { return "M" + d.join("L") + "Z"; })
     		.style("stroke", "#fff")
-    		.style("opacity", .25);
+    		.style("opacity", 0);
 
     	svg.selectAll("path")
         	.style("cursor","hand")
@@ -446,11 +491,11 @@ function plot_id(station_id) {
         	})
         	.on("mousemove", function(d,i){
           		if (d3.event.pageX < d3.select("div#plot").node().offsetLeft + width * 2 / 3) {
-            		popup.style("left", d3.event.pageX + 45);
+            		popup.style("left", (d3.event.pageX + 50) + "px");
           		} else {
-            		popup.style("left", d3.event.pageX - 400);
+            		popup.style("left", (d3.event.pageX - 240) + "px");
           		}
-          			popup.style("top", d3.event.pageY - 300);
+          			popup.style("top", (d3.event.pageY - 200) + "px");
         	});
 
         data_model.exit()
@@ -462,6 +507,10 @@ function plot_id(station_id) {
         	})
         	.remove();
 }
+
+</script>
+
+<script>
 
 </script>
 

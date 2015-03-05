@@ -20,8 +20,8 @@ $mode_mod = "transit";		// set to the same as $mode but with the following: walk
 
 // Google Developer API key
 
-$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
-//$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
+//$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
+$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
 
 // Connect to database
 

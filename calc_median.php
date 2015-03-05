@@ -14,8 +14,8 @@
 
 <?php
 
-$start_at = 14330;
-$number_to_update = 10000;
+$start_at = 20112;
+$number_to_update = 5000;
 
 $time_required = time() + ($number_to_update * 3.1);
 $time_now = date("Y-m-d H:i:s");

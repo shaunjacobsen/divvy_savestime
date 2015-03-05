@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
 	<link rel="stylesheet" type="text/css" href="styles.css">
+	<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 	<script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.js'></script>
 	<style>
@@ -17,12 +17,12 @@
 
 <div class="popup">
 
-<table><tr><td>
+<div id="tripinfo">
 
 <table width="250px"><tr><td>
 
 <span class="station">The From Station Name <i class="fa fa-arrow-right"></i> The To Station Name</span>
-<p><span class="distance"><i class="fa fa-tachometer"></i> 1.4 mi <em>(3.7 km)</em></span></p>
+<p><span class="distance"><i class="fa fa-compass"></i> 1.4 mi <em>(3.7 km)</em></span></p>
 <p>
 	<table width="250px">
 		<tr>
@@ -54,23 +54,17 @@
 	</tr>
 	<tr class="savingscontainer">
 		<td class="savings" colspan="2"><small>Divvy is </small>3 min<small> faster</small></td>
-		</tr>
-
-</table>
-
-</td>
-
-<!-- map -->
-
-<td>
-
-<div id="map">map loading</div>
-
-</td></tr>
+	</tr>
 
 </table>
 
 </div>
+
+<div id="map">map loading</div>
+
+</div>
+
+
 
 <script> 
 
