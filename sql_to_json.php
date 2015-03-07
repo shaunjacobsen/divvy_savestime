@@ -15,7 +15,7 @@
     $myquery = "
     SELECT id,count,station_pair AS stn_pr,station_from_id AS stn_f, station_to_id AS stn_t, time_transit as time_t, transit_type, transit_line, transit_line_short, colour, km_bike, median_time_bike as time_bike, savings_transit_real as savings_transit, savings_transit_real * count AS total_savings
     FROM 2014_distances
-	WHERE id < 24731 AND savings_transit_real > -600
+	WHERE id < 24500 AND savings_transit_real > -601
     ";
 
     

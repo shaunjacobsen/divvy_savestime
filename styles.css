@@ -134,6 +134,7 @@ div.popup {
   	max-width: 450px;
   	z-index: 1000;
   	height: 450px;
+  	border: 1px #000 solid;
 }
 
 div.popup .station {
