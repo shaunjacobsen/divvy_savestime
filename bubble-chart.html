@@ -29,7 +29,7 @@
     </div>
   </div>
 
-  <div id="plot">
+  <div id="plot"><span id="loading"><span class="loading"><i class="fa fa-cog fa-spin"></i> Getting Data </span><br /><br /><br /><span class="loading2">May take up to ten seconds...</span></span>
   </div>
 </div>
 
@@ -137,15 +137,15 @@ var height = 550;
   	var from_station_name = get_from_station_val["name"];
   	var to_station_name = get_to_station_val["name"];
   	var transit_steps = d.transit_type.split(",");
-  	var transit_lines = d.transit_line.split(",");
-  	function routeID(h) {
-  		if (d.transit_type == "BUS") {
-  			return d.transit_line_short;
-  		} else {
-  			var split_routes = d.transit_line_short.split(",");
-  			return split_routes[i];
-  		}
-  	}
+    var transit_lines = d.transit_line.split(",");
+    function routeID(h) {
+      if (d.transit_type == "BUS") {
+        return d.transit_line_short;
+      } else {
+        var split_routes = d.transit_line_short.split(",");
+        return split_routes[i];
+      }
+    }
   	var colour = d.colour.split(",");
   	var pair_id = d.id;
   	var calc_savings = (Math.round(d.time_transit/60)-Math.round(d.time_bike/60));
@@ -167,7 +167,7 @@ var height = 550;
   		if (calc_savings <= 0) {
   			return "0 min";
   		} else {
-  			return format_time(d.total_savings);
+  			return format_time(d.ts);
   		}
   	};
 
@@ -185,9 +185,7 @@ var height = 550;
 					output += "<td class=\"route\" style=\"background-color:#" + colour[i] + ";\">" + routeID() + "</td>";
 				}
 			}
-		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr></table>";
-		
-		output += "<hr />Debugging tools<br />Distances ID: " + pair_id + "</div>";
+		output += "</tr></table></td><td class=\"dirtime\">" + Math.round(d.time_transit/60) + "<small> min</small></td></tr><tr class=\"savingscontainer\"><td class=\"savings\" colspan=\"2\" style=\"background-color:" + is_savings_colour() + ";\"><i class=\"fa fa-bicycle fa-1x\"></i> &nbsp;" + Math.abs(calc_savings) + " <small>min " + is_savings() + "</small></td></tr></table></div>";
     
     return output;
     
@@ -196,9 +194,27 @@ var height = 550;
 function updateMarkers(d) {
   featureLayer.clearLayers(); // Clears existing markers from the map
 
+  var get_from_station_coord = $.grep(stations, function(e){ return e.id == d.stn_f; });
+  for (key in get_from_station_coord) {
+      if(get_from_station_coord.hasOwnProperty(key)) {
+        var from_coord_id = get_from_station_coord[key];
+      }
+    }
+
+  var from_coord = from_coord_id["latitude"] + "," + from_coord_id["longitude"];
+
+  var get_to_station_coord = $.grep(stations, function(e){ return e.id == d.stn_t; });
+  for (key in get_to_station_coord) {
+      if(get_to_station_coord.hasOwnProperty(key)) {
+        var to_coord_id = get_to_station_coord[key];
+      }
+    }
+
+  var to_coord = to_coord_id["latitude"] + "," + to_coord_id["longitude"];
+
   // Add the start and end station pair markers to the map
 
-	L.marker(d.stn_f_c.split(","), {
+	L.marker(from_coord.split(","), {
 		icon: L.mapbox.marker.icon({
 			'marker-size': 'large',
 			'marker-symbol': 'bicycle',
@@ -206,7 +222,7 @@ function updateMarkers(d) {
 		})
 	}).addTo(featureLayer);
 
-  L.marker(d.stn_t_c.split(","), {
+  L.marker(to_coord.split(","), {
     icon: L.mapbox.marker.icon({
       'marker-size': 'large',
       'marker-symbol': 'bicycle',
@@ -224,9 +240,9 @@ function mouseover(d,i) {
     popup.style("opacity", 1);
     popup_content.html(generate_popup(d));
     svg.select("circle#current")
-      .attr("cx", x(d.savings_transit))
+      .attr("cx", x(d.st))
       .attr("cy", y(d.count))
-      .attr("r", r(d.total_savings))
+      .attr("r", r(d.ts))
       .attr("pair", d.id)
       .style("opacity", 1);
     maparea.style("opacity", 1);
@@ -258,15 +274,15 @@ d3.json("data.json", function(data) {
 	stations = data.stations;
 	trips = data.trips;
 	trips = data.trips.filter(function(t) {
-		return (t.stn_f !== t.stn_t) && (t.savings_transit >= -600);
+		return (t.stn_f !== t.stn_t) && (t.st >= -600);
 	});
 	transitroutes = data.transitroutes;
 
 	// converts seconds to minutes
 
 	trips.forEach(function(t) { 
-		t.savings_transit = t.savings_transit / 60;
-		t.total_savings = t.total_savings;
+		t.st = t.st / 60;
+		t.ts = t.ts;
 	});
 
 	d3.select("#station_menu")
@@ -280,8 +296,10 @@ d3.json("data.json", function(data) {
 			.text("" + stations[i].id + ". " + stations[i].name);
 	}
 
+  d3.select("#loading").remove();
+
 	all_total_trips = d3.sum(trips, function(t) { return t.count; });
-	all_total_savings = d3.sum(trips, function(t) { return t.total_savings; });
+	all_total_savings = d3.sum(trips, function(t) { return t.ts; });
 
 	init();
 
@@ -290,7 +308,7 @@ d3.json("data.json", function(data) {
 function init() {
 
 	x = d3.scale.linear()
-    	.domain(d3.extent(trips, function(t) { return t.savings_transit; }))
+    	.domain(d3.extent(trips, function(t) { return t.st; }))
     	.range([margin, width - margin]).nice();
 
 	var x_axis = d3.svg.axis().scale(x)
@@ -345,7 +363,7 @@ function init() {
 		.style("text-anchor", "end")
 		.text("# Trips");
 
-    plot_id(76);
+    plot_id(-1);
 
 }
 
@@ -373,11 +391,11 @@ function plot_id(station_id) {
 		d3.select("#total_savings").html(format_total_savings(d3.sum(trips, function(t) {
 			if (station_id >= 0) {
 				if ((t.stn_f == station_id) || (t.stn_t == station_id))
-					return t.total_savings;
+					return t.ts;
 				else
 					return 0;
 			} else {
-				return t.total_savings;
+				return t.ts;
 			}
 		})));
 	}
@@ -401,7 +419,7 @@ function plot_id(station_id) {
 		.range([height - 40, 60]);
 
 	r = d3.scale.linear()
-		.domain(d3.extent(selected_trips, function(t) { return t.total_savings; }))
+		.domain(d3.extent(selected_trips, function(t) { return t.ts; }))
     	.range([2, 50]);
 
     var y_axis = d3.svg.axis().scale(y)
@@ -418,7 +436,7 @@ function plot_id(station_id) {
     	.append("g")
     	.attr("class", "element")
     	.attr("transform", function(d,i) {
-    		return "translate(" + x(d.savings_transit) + ",-50)";
+    		return "translate(" + x(d.st) + ",-50)";
     	})
     	.each(enter);
 
@@ -427,7 +445,7 @@ function plot_id(station_id) {
     	element.append("circle")
         .attr("class", "dot")
         .attr("r", function(d,i) {
-          return r(d.total_savings);
+          return r(d.ts);
         })
         .attr("fill","#6ecfd8")
         .style("stroke-width", "3px")
@@ -448,14 +466,14 @@ function plot_id(station_id) {
         	})
         	.ease("quad-in-out")
     		.attr("transform", function(d,i) {
-        		return "translate(" + x(d.savings_transit) + "," + y(d.count) + ")";
+        		return "translate(" + x(d.st) + "," + y(d.count) + ")";
         	});
         element.select(".dot")
         	.transition()
         	.delay(0)
         	.duration(2000)
         	.ease("bounce")
-        	.attr("r", r(e.total_savings))
+        	.attr("r", r(e.ts))
         	.attr("pair_id", e.id);
     }
 
@@ -464,7 +482,7 @@ function plot_id(station_id) {
     	var genRan = Math.floor((Math.random() * 1000) + 1);
     	var combCount = + t.count + "." + genRan;
     	var numCombCount = Number(combCount);
-    	return [x(t.savings_transit),y(numCombCount)];
+    	return [x(t.st),y(numCombCount)];
     });
 
     svg.selectAll("clipPath").remove();
@@ -507,7 +525,7 @@ function plot_id(station_id) {
         	.duration(1000)
         	.delay(0)
         	.attr("transform", function(d,i) {
-        		return "translate(" + x(d.savings_transit) + "," + (height + 50) + ")";
+        		return "translate(" + x(d.st) + "," + (height + 50) + ")";
         	})
         	.remove();
 }

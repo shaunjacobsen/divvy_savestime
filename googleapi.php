@@ -15,13 +15,13 @@
 
 $i = 1;						// default value for i, in case it is not established below.
 $deptime = 1426528800; 		// the departure time (in UNIX timestamp, i.e. seconds since 01/01/1970 – this value must be after today's date)
-$mode = "transit";			// mode to get directions in (walking, bicycling, transit, driving)
-$mode_mod = "transit";		// set to the same as $mode but with the following: walk, bike, transit, drive
+$mode = "bicycling";			// mode to get directions in (walking, bicycling, transit, driving)
+$mode_mod = "bike";		// set to the same as $mode but with the following: walk, bike, transit, drive
 
 // Google Developer API key
 
-//$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
-$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
+$apiKey = "AIzaSyC5luicTwTrB6k8PWJCN2GPsSjS9p2K6do";
+//$apiKey = "AIzaSyDWV2CbYHKq48Up0XbYoksn-wElbkPixt8";
 
 // Connect to database
 
