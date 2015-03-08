@@ -38,14 +38,14 @@
 		<h1>Who's Faster? </h1><h2>A look at how Divvy riders perform compared to public transport <br /><em>by <a href="http://www.sjacobsen.com/" target="_blank">Shaun Jacobsen</a> of <a href="http://www.transitized.com/" target="_blank">Transitized</a></em></h2>
 		<div class="description">
 			<p>Divvy bike-sharing is a complement to Chicago's existing transport system as well as a new transportation network. How are people using it as such?</p>
-			<p>This project takes the median travel time of Divvy trips taken in 2014 between every possible station pair and compares it to the same trip by public transportation. <em>In most cases, Divvy trips are faster than public transportation, suggesting that its riders could be saving time by riding bikes instead of trains, buses, or walking.</em></p>
+			<p>This project takes the median travel time of Divvy trips taken in 2014 between every possible station pair and compares it to the same trip by public transportation. <em>In most cases, Divvy trips are faster than public transportation, suggesting that its riders could be saving time replacing train, bus, or walking trips with Divvy trips.</em></p>
 			<p>Roll over a circle to see travel time/distance, the number of trips, and a map of the station pair. Select a station from the list to see only trips to and from that station.</p>
 			<p><strong>Data Collection &amp; Assumptions</strong></p>
-			<div class="fineprint"><p>Only station pairs with more than 15 trips are displayed.</p>
+			<div class="fineprint"><p>Only station pairs with more than 15 trips and a savings of more than -10 minutes are displayed. This is to reduce the size of the dataset and remove outliers (e.g. lengthy tourist trips).</p>
       <p>Transit trip duration and steps were calculated using <a href="https://developers.google.com/maps/documentation/directions/" target="_blank">Google Directions API</a> between the latitude/longitude of station pairs. Transit directions are calculated for noon on a Monday. Walking directions are provided if Google could not find a faster trip by public transport.</p>
 			<p>Bicycle trip duration and distance is calculated as the median trip duration of all trips between the two listed stations. Trips by Divvy are generally longer than non-Divvy trips, as calculated by the Google Directions API.</p>
 			<p>Median travel times are more favourable than averages due to large disparities in trip duration between annual Divvy members and 24-hour passholders, who are assumed to be more recreational (tourist) users who ride more slowly. Calculating the median prevents outliers (people taking very long trips) from skewing the data.</p>
-			<p>Divvy trip data provided by <a href="http://www.divvybikes.com/" target="_blank">Divvy</a>. Inspiration from <a href="http://ta.virot.me.s3-website-us-east-1.amazonaws.com/hubway/hubway-summary.html" target="_blank">A network analysis of Hubway</a>.</p>
+			<p>Divvy trip data provided by <a href="http://www.divvybikes.com/" target="_blank">Divvy</a>. Inspiration from <a href="http://ta.virot.me.s3-website-us-east-1.amazonaws.com/hubway/hubway-summary.html" target="_blank">A network analysis of Hubway</a>.<br />Maps &copy; Mapbox and &copy; OpenStreetMap contibutors.</p>
 			<p>Originally submitted for the 2nd Annual Divvy Data Challenge. <a href="https://github.com/shaunjacobsen/divvy_savestime" target="_blank" style="color: #5fcad3;">Fork on GitHub.</a></p>
 			</div>
 		</div>
@@ -172,9 +172,9 @@ var height = 550;
   		}
   	};
 
-    var output = "<div id=\"popup-container\"><span class=\"station\">" + from_station_name + "<br /><i class=\"fa fa-arrow-down\"></i><br />" + to_station_name + "</span><p><span class=\"distance\"><i class=\"fa fa-tachometer\"></i> " + round_distance + " mi <em>(" + km_distance + " km)</em></span></p><p><table width=\"250px\"><tr><td class=\"stationstats\" style=\"border-right: #fff 5px solid;\">" + comma(d.count) + "<small> trips</small></td><td class=\"stationstats\">" + reformat_total_time_saved() + "<small> saved</small></td></tr></table></p><hr />";
+    var output = "<div id=\"popup-container\"><span class=\"station\">" + from_station_name + "<br /><i class=\"fa fa-arrow-down\"></i><br />" + to_station_name + "</span><p><span class=\"distance\"><i class=\"fa fa-tachometer\"></i> " + round_distance + " mi <em>(" + km_distance + " km)</em></span></p><p><table width=\"275px\"><tr><td class=\"stationstats\" style=\"border-right: #fff 5px solid;\">" + comma(d.count) + "<small> trips</small></td><td class=\"stationstats\">" + reformat_total_time_saved() + "<small> saved</small></td></tr></table></p><hr />";
     
-    output += "<table width=\"250px\" class=\"directions\"><tr class=\"dircontainer\"><td class=\"dirbike\"><img src=\"img/bike.png\" height=\"50px\" /></td><td class=\"dirtime\">" + Math.round(d.time_bike/60) + "<small> min</small></td></tr><tr class=\"dircontainer\"><td><table align=\"center\"><tr>";
+    output += "<table width=\"275px\" class=\"directions\"><tr class=\"dircontainer\"><td class=\"dirbike\"><img src=\"img/bike.png\" height=\"50px\" /></td><td class=\"dirtime\">" + Math.round(d.time_bike/60) + "<small> min</small></td></tr><tr class=\"dircontainer\"><td><table align=\"center\"><tr>";
 				for (var i=0; i<transit_steps.length; i++) {
 					output += "<td style=\"text-align:center\"><img src=\"img/" + transit_steps[i] + ".png\" height=\"50px\"/></td>";
 				}
@@ -386,10 +386,10 @@ function plot() {
 }
 
 function plot_id(station_id) {
-	if(station_id < 0) {
+	if(station_id == -1) {
 		d3.select("#total_trips").html(comma(all_total_trips));
 		d3.select("#total_savings").html(format_total_savings(all_total_savings));
-	} else {
+	} else if (station_id >= 0) {
 		d3.select("#total_trips").html(comma(d3.sum(trips, function(t) {
 			if (station_id >= 0) {
 				if ((t.stn_f == station_id) || (t.stn_t == station_id))
@@ -410,14 +410,35 @@ function plot_id(station_id) {
 				return t.total_savings;
 			}
 		})));
-	}
+	} else {
+    d3.select("#total_trips").html(comma(d3.sum(top_trips, function(t) {
+      if (station_id >= 0) {
+        if ((t.stn_f == station_id) || (t.stn_t == station_id))
+          return t.count;
+        else
+          return 0;
+      } else {
+        return t.count;
+      }
+    })));
+    d3.select("#total_savings").html(format_total_savings(d3.sum(top_trips, function(t) {
+      if (station_id >= 0) {
+        if ((t.stn_f == station_id) || (t.stn_t == station_id))
+          return t.total_savings;
+        else
+          return 0;
+      } else {
+        return t.total_savings;
+      }
+    })));
+  }
 
 	var selected_trips;
 	if (station_id >= 0) {
 		selected_trips = trips.filter(function(t) {
 			return ((t.stn_f == station_id) || (t.stn_t == station_id));
 		});
-	} else if (station_id = -2) {
+	} else if (station_id == -2) {
     selected_trips = top_trips;
 	} else {
     selected_trips = trips;
@@ -524,12 +545,12 @@ function plot_id(station_id) {
           		mouseout(selected_trips[i],i);
         	})
         	.on("mousemove", function(d,i){
-          		if (d3.event.pageX < d3.select("div#plot").node().offsetLeft + width * 2 / 3) {
+          		if (d3.event.pageX < d3.select("div#plot").node().offsetLeft + width * 2 / 2) {
             		popup.style("left", (d3.event.pageX + 50) + "px");
           		} else {
             		popup.style("left", (d3.event.pageX - 240) + "px");
           		}
-          			popup.style("top", (d3.event.pageY - 200) + "px");
+          			popup.style("top", (d3.event.pageY - 240) + "px");
         	});
 
         data_model.exit()
